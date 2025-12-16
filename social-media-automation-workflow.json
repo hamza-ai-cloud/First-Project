@@ -95,6 +95,17 @@
       }
     },
     {
+      "parameters": {},
+      "name": "Merge Posts",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        325
+      ],
+      "id": "merge-posts-node"
+    },
+    {
       "parameters": {
         "operation": "append",
         "spreadsheetId": "={{ $env.GOOGLE_SHEET_ID }}",
@@ -105,8 +116,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 1,
       "position": [
-        1050,
-        300
+        1250,
+        325
       ],
       "id": "log-sheets-node",
       "credentials": {
@@ -131,8 +142,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        1250,
-        300
+        1450,
+        325
       ],
       "id": "backup-check-node"
     },
@@ -147,8 +158,8 @@
       "type": "n8n-nodes-base.dropbox",
       "typeVersion": 1,
       "position": [
-        1450,
-        300
+        1650,
+        325
       ],
       "id": "backup-dropbox-node",
       "credentials": {
@@ -169,8 +180,8 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 1,
       "position": [
-        1650,
-        300
+        1850,
+        325
       ],
       "id": "notification-node",
       "credentials": {
@@ -224,7 +235,7 @@
       "main": [
         [
           {
-            "node": "Log to Google Sheets",
+            "node": "Merge Posts",
             "type": "main",
             "index": 0
           }
@@ -232,6 +243,17 @@
       ]
     },
     "Post to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Merge Posts",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Posts": {
       "main": [
         [
           {
@@ -258,6 +280,13 @@
         [
           {
             "node": "Backup to Dropbox",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Success Notification",
             "type": "main",
             "index": 0
           }

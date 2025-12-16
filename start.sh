@@ -26,9 +26,13 @@ fi
 
 echo -e "${GREEN}✅ Docker found${NC}"
 
-# Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
-    echo -e "${RED}❌ Docker Compose is not installed${NC}"
+# Check if Docker Compose is available (try both old and new syntax)
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
+    echo -e "${RED}❌ Docker Compose is not available${NC}"
     echo "Please install Docker Compose from: https://docs.docker.com/compose/install/"
     exit 1
 fi
@@ -53,7 +57,7 @@ echo "Starting n8n with Docker Compose..."
 echo ""
 
 # Start Docker Compose
-docker-compose up -d
+$DOCKER_COMPOSE up -d
 
 echo ""
 echo -e "${GREEN}✅ n8n is starting up!${NC}"
@@ -77,9 +81,9 @@ echo "📚 Documentation:"
 echo "   - Setup Guide: SETUP_GUIDE.md"
 echo "   - Content Templates: CONTENT_TEMPLATES.md"
 echo ""
-echo "🔍 Check status: docker-compose ps"
-echo "📋 View logs: docker-compose logs -f n8n"
-echo "🛑 Stop services: docker-compose down"
+echo "🔍 Check status: docker-compose ps (or 'docker compose ps')"
+echo "📋 View logs: docker-compose logs -f n8n (or 'docker compose logs -f n8n')"
+echo "🛑 Stop services: docker-compose down (or 'docker compose down')"
 echo ""
 echo "================================================"
 echo ""
@@ -88,7 +92,7 @@ echo ""
 echo "Checking n8n status..."
 sleep 5
 
-if docker-compose ps | grep -q "n8n.*Up"; then
+if $DOCKER_COMPOSE ps | grep -q "n8n.*Up"; then
     echo -e "${GREEN}✅ n8n is running successfully!${NC}"
     echo ""
     echo "Opening n8n in your browser in 10 seconds..."
@@ -105,7 +109,7 @@ if docker-compose ps | grep -q "n8n.*Up"; then
     fi
 else
     echo -e "${YELLOW}⚠️  n8n may still be starting up${NC}"
-    echo "Run 'docker-compose logs -f n8n' to check status"
+    echo "Run '$DOCKER_COMPOSE logs -f n8n' to check status"
 fi
 
 echo ""

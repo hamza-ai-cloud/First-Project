@@ -38,7 +38,6 @@ services:
       - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
     volumes:
       - n8n_data:/home/node/.n8n
-      - ./social-media-automation-workflow.json:/home/node/.n8n/workflows/social-media-automation-workflow.json
     depends_on:
       postgres:
         condition: service_healthy
