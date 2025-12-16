@@ -1,0 +1,333 @@
+{
+  "name": "Daily Social Media Content Creator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Daily Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "id": "schedule-trigger-node"
+    },
+    {
+      "parameters": {
+        "content": "You are a creative social media content creator. Generate an engaging, original social media post about technology, innovation, or entrepreneurship. The post should be:\n- Engaging and authentic\n- Include relevant hashtags\n- Be platform-appropriate length (under 280 characters for Twitter)\n- Include a call-to-action or thought-provoking question\n- Be positive and inspiring\n\nGenerate a new, unique post.",
+        "options": {}
+      },
+      "name": "AI Content Generator",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "id": "ai-content-generator",
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract generated content\nconst aiResponse = items[0].json.choices[0].message.content;\n\n// Store content with timestamp\nconst timestamp = new Date().toISOString();\n\nreturn [\n  {\n    json: {\n      content: aiResponse,\n      timestamp: timestamp,\n      platform: 'twitter',\n      status: 'ready_to_post'\n    }\n  }\n];"
+      },
+      "name": "Format Content",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "id": "format-content-node"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.content }}",
+        "additionalFields": {}
+      },
+      "name": "Post to Twitter",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 1,
+      "position": [
+        850,
+        250
+      ],
+      "id": "post-twitter-node",
+      "credentials": {
+        "twitterOAuth1Api": {
+          "id": "2",
+          "name": "Twitter OAuth1 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.content }}",
+        "additionalFields": {}
+      },
+      "name": "Post to LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        850,
+        400
+      ],
+      "id": "post-linkedin-node",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "3",
+          "name": "LinkedIn OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "Merge Posts",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        325
+      ],
+      "id": "merge-posts-node"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "spreadsheetId": "={{ $env.GOOGLE_SHEET_ID }}",
+        "range": "A:D",
+        "options": {}
+      },
+      "name": "Log to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        325
+      ],
+      "id": "log-sheets-node",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $env.ENABLE_BACKUP }}",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "name": "Backup Enabled?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        325
+      ],
+      "id": "backup-check-node"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "fileContent": "={{ JSON.stringify($json, null, 2) }}",
+        "fileName": "post_{{ $json.timestamp }}.json",
+        "options": {}
+      },
+      "name": "Backup to Dropbox",
+      "type": "n8n-nodes-base.dropbox",
+      "typeVersion": 1,
+      "position": [
+        1650,
+        325
+      ],
+      "id": "backup-dropbox-node",
+      "credentials": {
+        "dropboxOAuth2Api": {
+          "id": "5",
+          "name": "Dropbox OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "✅ Daily social media post published successfully!\n\nContent: {{ $json.content }}\nTimestamp: {{ $json.timestamp }}\nPlatforms: Twitter, LinkedIn",
+        "additionalFields": {
+          "channel": "={{ $env.SLACK_CHANNEL }}"
+        }
+      },
+      "name": "Send Success Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        1850,
+        325
+      ],
+      "id": "notification-node",
+      "credentials": {
+        "slackApi": {
+          "id": "6",
+          "name": "Slack API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Content Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Content Generator": {
+      "main": [
+        [
+          {
+            "node": "Format Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Content": {
+      "main": [
+        [
+          {
+            "node": "Post to Twitter",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Twitter": {
+      "main": [
+        [
+          {
+            "node": "Merge Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Merge Posts",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Posts": {
+      "main": [
+        [
+          {
+            "node": "Log to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Backup Enabled?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backup Enabled?": {
+      "main": [
+        [
+          {
+            "node": "Backup to Dropbox",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Success Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backup to Dropbox": {
+      "main": [
+        [
+          {
+            "node": "Send Success Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "social-media",
+      "id": "1"
+    },
+    {
+      "name": "automation",
+      "id": "2"
+    },
+    {
+      "name": "content-creation",
+      "id": "3"
+    }
+  ],
+  "meta": {
+    "instanceId": "your-n8n-instance-id"
+  },
+  "id": "daily-social-media-creator",
+  "active": true,
+  "createdAt": "2025-12-16T04:35:39.635Z",
+  "updatedAt": "2025-12-16T04:35:39.635Z"
+}
